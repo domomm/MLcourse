@@ -2,14 +2,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 import tensorflow as tf
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Input, Conv2D, GlobalAveragePooling2D, Dense
 from sklearn.metrics import roc_curve, auc
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import label_binarize
 from itertools import cycle
-
-
 
 
 def plt_Training_Val_Accuracy(history):
@@ -46,70 +42,13 @@ def plt_conf_matrix(conf_matrix):
     plt.show()
     
 #code from the assignment starts here
-def display_xRAY(X,input_shape):
+def display_xRAY(X):
     fig, ax = plt.subplots(1,1, figsize=(2,2))
-    X_reshaped = X.reshape(input_shape).T
+    X_reshaped = X.reshape((100,100)).T
     # Display the image
     ax.imshow(X_reshaped, cmap='gray')
     plt.show()
 #code from the assignment ends here
-
-def get_last_conv_layer(model):
-    for layer in reversed(model.layers):
-        if isinstance(layer, tf.keras.layers.Conv2D):
-            return layer.name
-    raise ValueError("No convolutional layer found in the model.")
-
-def get_grad_cam_model_sequential(model):
-    last_conv_layer_name = get_last_conv_layer(model)
-    last_conv_layer_idx = model.layers[-1].output.shape[-1]  # Index of the last layer in the original model
-
-    grad_model = Sequential(model.layers[:-1])  # Exclude the output layer
-
-    return grad_model, last_conv_layer_name, last_conv_layer_idx
-
-def calculate_grad_cam_sequential(grad_model, input_image, class_index):
-    with tf.GradientTape() as tape:
-        conv_output = grad_model(input_image, training=False)
-        output_class = conv_output[:, :, :, class_index]
-
-    grads = tape.gradient(output_class, conv_output)
-    weights = tf.reduce_mean(grads, axis=(1, 2), keepdims=True)
-    grad_cam = tf.reduce_sum(weights * conv_output, axis=-1)
-
-    return grad_cam, weights
-
-def overlay_grad_cam_sequential(input_image, grad_cam):
-    normalized_grad_cam = (grad_cam - tf.reduce_min(grad_cam)) / (tf.reduce_max(grad_cam) - tf.reduce_min(grad_cam))
-    upsampled_grad_cam = tf.image.resize(normalized_grad_cam, input_image.shape[1:3])
-    heatmap = tf.keras.utils.matplotlib.image.array_to_img(upsampled_grad_cam[0])
-    overlayed_img = tf.keras.utils.matplotlib.image.array_to_img(input_image[0]).overlay(heatmap)
-
-    return overlayed_img
-
-def visualize_grad_cam_sequential(model, input_image, class_index):
-    grad_model, last_conv_layer_name, last_conv_layer_idx = get_grad_cam_model_sequential(model)
-
-    grad_cam, _ = calculate_grad_cam_sequential(grad_model, input_image, class_index)
-
-    overlayed_img = overlay_grad_cam_sequential(input_image, grad_cam)
-
-    plt.figure(figsize=(12, 4))
-    plt.subplot(1, 3, 1)
-    plt.imshow(tf.keras.utils.matplotlib.image.array_to_img(input_image[0]))
-    plt.title('Original Image')
-
-    plt.subplot(1, 3, 2)
-    plt.imshow(tf.keras.utils.matplotlib.image.array_to_img(grad_cam[0]))
-    plt.title('Grad-CAM Heatmap')
-
-    plt.subplot(1, 3, 3)
-    plt.imshow(overlayed_img)
-    plt.title('Overlayed Image with Grad-CAM')
-    plt.show()
-# Example usage:
-
-
 
 def plot_roc_curve(y_true, y_score, num_classes):
     """
